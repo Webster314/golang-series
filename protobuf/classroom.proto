@@ -1,0 +1,14 @@
+import "google/protobuf/any.proto";
+import "student.proto";
+
+option go_package="./;main";
+
+message classroom{
+    repeated google.protobuf.Any anys = 1;
+    repeated main.student classrooms = 2;
+    map<string, int32> points = 3;
+    oneof test_onfof{
+        string name = 4;
+        int32 id = 9;
+    };
+}    

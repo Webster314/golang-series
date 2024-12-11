@@ -1,0 +1,18 @@
+syntax="proto3";
+package main;
+option go_package="./;main";
+
+message student{
+    reserved 4, 15, 9 to 11; 
+    reserved "foo", "bar";
+    string name = 1;
+    bool male = 2;
+    repeated int32 score = 3;
+    enum Gender{
+        option allow_alias = true;
+        FEMALE = 0;
+        MALE = 1;
+        HELICOPTER = 1;
+    }
+    Gender gender = 6;
+}
