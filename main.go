@@ -4,7 +4,6 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"hello/calc"
 	"log"
 	"net/rpc"
 	"os"
@@ -21,18 +20,11 @@ type Result struct {
 }
 
 var wg sync.WaitGroup
-var ch = make(chan string, 10)
 
 func download_wg(url string) {
 	fmt.Println("Start to download", url)
 	time.Sleep(time.Second)
 	wg.Done()
-}
-
-func download_chan(url string) {
-	fmt.Println("Start to download", url)
-	time.Sleep(time.Second)
-	ch <- url
 }
 
 type Person interface {
@@ -158,11 +150,6 @@ func main() {
 		fmt.Println(i, num)
 	}
 
-	// function
-	quo, rem := calc.Div(100, 17)
-	fmt.Println(quo, rem)          // 5 15
-	fmt.Println(calc.Add(100, 17)) // 117
-
 	_, err := os.Open("nonexist.file")
 	if err != nil {
 		fmt.Println(err)
@@ -217,15 +204,7 @@ func main() {
 	}
 	fmt.Println("Done")
 
-	// channel
-	for i := 0; i < 3; i++ {
-		go download_chan("a.com/" + strconv.Itoa(i+'0'))
-	}
-	for i := 0; i < 3; i++ {
-		var msg = <-ch
-		fmt.Println("finish", msg)
-	}
-
+	//
 	fmt.Println(quote.Go())
 
 	c := [5]int{}
