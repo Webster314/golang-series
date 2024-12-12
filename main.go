@@ -1,9 +1,12 @@
 package main
 
 import (
+	"crypto/tls"
 	"errors"
-	"hello/calc"
 	"fmt"
+	"hello/calc"
+	"log"
+	"net/rpc"
 	"os"
 	"reflect"
 	"strconv"
@@ -13,12 +16,23 @@ import (
 	"rsc.io/quote"
 )
 
-var wg sync.WaitGroup
+type Result struct {
+	Num, Ans int
+}
 
-func download(url string) {
+var wg sync.WaitGroup
+var ch = make(chan string, 10)
+
+func download_wg(url string) {
 	fmt.Println("Start to download", url)
 	time.Sleep(time.Second)
 	wg.Done()
+}
+
+func download_chan(url string) {
+	fmt.Println("Start to download", url)
+	time.Sleep(time.Second)
+	ch <- url
 }
 
 type Person interface {
@@ -189,22 +203,49 @@ func main() {
 	// sync goroutine
 	for i := 0; i < 3; i++ {
 		wg.Add(1)
-		go download("a.com/" + strconv.Itoa(i+'0'))
+		go download_wg("a.com/" + strconv.Itoa(i+'0'))
 	}
 	wg.Wait()
 	fmt.Println("Finished")
 
-    // channel
-    for i := 0; i < 3; i++ {
-        go download_chan("a.com/" + strconv.Itoa(i+'0'));
-    }
-    for i := 0; i < 3; i++ {
-        var msg = <-ch
-        fmt.Println("finish", msg);
-    }
+	for i := 0; i < 3; i++ {
+		go download_chan("a.com/" + strconv.Itoa(i+'0'))
+	}
+	for i := 0; i < 3; i++ {
+		msg = <-ch
+		fmt.Println(msg)
+	}
+	fmt.Println("Done")
+
+	// channel
+	for i := 0; i < 3; i++ {
+		go download_chan("a.com/" + strconv.Itoa(i+'0'))
+	}
+	for i := 0; i < 3; i++ {
+		var msg = <-ch
+		fmt.Println("finish", msg)
+	}
 
 	fmt.Println(quote.Go())
 
 	c := [5]int{}
 	fmt.Println(c)
+
+	config := &tls.Config{
+		InsecureSkipVerify: true,
+	}
+	conn, _ := tls.Dial("tcp", "localhost:1234", config)
+	defer conn.Close()
+	client := rpc.NewClient(conn)
+	var res Result
+	if err = client.Call("Cal.Square", 12, &res); err != nil {
+		log.Fatal("Call failed")
+	}
+	log.Printf("%d^2 == %d", res.Num, res.Ans)
+
+	asyncCall := client.Go("Cal.Square", 20, &res, nil)
+	log.Printf("%d^2 == %d", res.Num, res.Ans)
+
+	<-asyncCall.Done
+	log.Printf("%d^2 == %d", res.Num, res.Ans)
 }
